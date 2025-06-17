@@ -285,3 +285,5 @@ export const initializeDatabase = () => {
 
   console.log('✅ Database queries prepared successfully');
 };
+
+export { queries }
