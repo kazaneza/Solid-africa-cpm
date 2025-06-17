@@ -1,9 +1,12 @@
-import { db, queries } from '../src/lib/database.js';
+import { initializeDatabase, queries } from '../src/lib/database.js';
 import bcrypt from 'bcryptjs';
 
 console.log('🌱 Seeding database with initial data...');
 
 try {
+  // Initialize database first (this will prepare queries)
+  initializeDatabase();
+  
   // Create admin user
   const hashedPassword = bcrypt.hashSync('admin123', 10);
   const adminUser = queries.createUser.get('admin@solidafrica.org', hashedPassword, 'ADMIN');

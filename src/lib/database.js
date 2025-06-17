@@ -12,6 +12,9 @@ export const db = new Database(dbPath);
 // Enable foreign keys
 db.pragma('foreign_keys = ON');
 
+// Store queries object
+export let queries = {};
+
 // Database schema
 export const initializeDatabase = () => {
   // Users table
@@ -176,107 +179,109 @@ export const initializeDatabase = () => {
     END;
   `);
 
-  console.log('✅ Database initialized successfully');
-};
+  console.log('✅ Database schema created successfully');
 
-// Helper functions for common queries
-export const queries = {
-  // Users
-  createUser: db.prepare(`
-    INSERT INTO users (email, password, role) 
-    VALUES (?, ?, ?) 
-    RETURNING id, email, role, created_at
-  `),
-  
-  getUserByEmail: db.prepare(`
-    SELECT id, email, password, role, created_at 
-    FROM users 
-    WHERE email = ?
-  `),
-  
-  getUserById: db.prepare(`
-    SELECT id, email, role, created_at 
-    FROM users 
-    WHERE id = ?
-  `),
+  // Now prepare all queries after tables are created
+  queries = {
+    // Users
+    createUser: db.prepare(`
+      INSERT INTO users (email, password, role) 
+      VALUES (?, ?, ?) 
+      RETURNING id, email, role, created_at
+    `),
+    
+    getUserByEmail: db.prepare(`
+      SELECT id, email, password, role, created_at 
+      FROM users 
+      WHERE email = ?
+    `),
+    
+    getUserById: db.prepare(`
+      SELECT id, email, role, created_at 
+      FROM users 
+      WHERE id = ?
+    `),
 
-  // Schools
-  getAllSchools: db.prepare(`
-    SELECT * FROM schools 
-    WHERE active = 1 
-    ORDER BY name
-  `),
-  
-  createSchool: db.prepare(`
-    INSERT INTO schools (name, location, active) 
-    VALUES (?, ?, ?) 
-    RETURNING *
-  `),
+    // Schools
+    getAllSchools: db.prepare(`
+      SELECT * FROM schools 
+      WHERE active = 1 
+      ORDER BY name
+    `),
+    
+    createSchool: db.prepare(`
+      INSERT INTO schools (name, location, active) 
+      VALUES (?, ?, ?) 
+      RETURNING *
+    `),
 
-  // Ingredients
-  getAllIngredients: db.prepare(`
-    SELECT * FROM ingredients 
-    ORDER BY name
-  `),
-  
-  createIngredient: db.prepare(`
-    INSERT INTO ingredients (name, unit, category) 
-    VALUES (?, ?, ?) 
-    RETURNING *
-  `),
+    // Ingredients
+    getAllIngredients: db.prepare(`
+      SELECT * FROM ingredients 
+      ORDER BY name
+    `),
+    
+    createIngredient: db.prepare(`
+      INSERT INTO ingredients (name, unit, category) 
+      VALUES (?, ?, ?) 
+      RETURNING *
+    `),
 
-  // Weeks
-  getCurrentWeek: db.prepare(`
-    SELECT * FROM weeks 
-    WHERE year = ? AND week_number = ?
-  `),
-  
-  createWeek: db.prepare(`
-    INSERT INTO weeks (month, year, week_number, start_date, end_date) 
-    VALUES (?, ?, ?, ?, ?) 
-    RETURNING *
-  `),
+    // Weeks
+    getCurrentWeek: db.prepare(`
+      SELECT * FROM weeks 
+      WHERE year = ? AND week_number = ?
+    `),
+    
+    createWeek: db.prepare(`
+      INSERT INTO weeks (month, year, week_number, start_date, end_date) 
+      VALUES (?, ?, ?, ?, ?) 
+      RETURNING *
+    `),
 
-  // Purchases
-  getPurchasesByWeek: db.prepare(`
-    SELECT p.*, i.name as ingredient_name, i.unit as ingredient_unit
-    FROM purchases p
-    JOIN ingredients i ON p.ingredient_id = i.id
-    WHERE p.week_id = ?
-    ORDER BY p.purchase_date DESC
-  `),
-  
-  createPurchase: db.prepare(`
-    INSERT INTO purchases (week_id, ingredient_id, purchase_date, quantity, unit_price, created_by) 
-    VALUES (?, ?, ?, ?, ?, ?) 
-    RETURNING *
-  `),
+    // Purchases
+    getPurchasesByWeek: db.prepare(`
+      SELECT p.*, i.name as ingredient_name, i.unit as ingredient_unit
+      FROM purchases p
+      JOIN ingredients i ON p.ingredient_id = i.id
+      WHERE p.week_id = ?
+      ORDER BY p.purchase_date DESC
+    `),
+    
+    createPurchase: db.prepare(`
+      INSERT INTO purchases (week_id, ingredient_id, purchase_date, quantity, unit_price, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?) 
+      RETURNING *
+    `),
 
-  // Productions
-  getProductionsByWeek: db.prepare(`
-    SELECT p.*, s.name as school_name
-    FROM productions p
-    JOIN schools s ON p.school_id = s.id
-    WHERE p.week_id = ?
-    ORDER BY p.production_date DESC
-  `),
-  
-  createProduction: db.prepare(`
-    INSERT INTO productions (week_id, school_id, production_date, starch_kg, vegetables_kg, starch_portion_per_kg, veg_portion_per_kg, beneficiaries, created_by) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
-    RETURNING *
-  `),
+    // Productions
+    getProductionsByWeek: db.prepare(`
+      SELECT p.*, s.name as school_name
+      FROM productions p
+      JOIN schools s ON p.school_id = s.id
+      WHERE p.week_id = ?
+      ORDER BY p.production_date DESC
+    `),
+    
+    createProduction: db.prepare(`
+      INSERT INTO productions (week_id, school_id, production_date, starch_kg, vegetables_kg, starch_portion_per_kg, veg_portion_per_kg, beneficiaries, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+      RETURNING *
+    `),
 
-  // Indirect costs
-  getIndirectCostsByMonth: db.prepare(`
-    SELECT * FROM indirect_costs 
-    WHERE month = ? AND year = ? 
-    ORDER BY created_at DESC
-  `),
-  
-  createIndirectCost: db.prepare(`
-    INSERT INTO indirect_costs (month, year, cost_category, description, amount, created_by) 
-    VALUES (?, ?, ?, ?, ?, ?) 
-    RETURNING *
-  `)
+    // Indirect costs
+    getIndirectCostsByMonth: db.prepare(`
+      SELECT * FROM indirect_costs 
+      WHERE month = ? AND year = ? 
+      ORDER BY created_at DESC
+    `),
+    
+    createIndirectCost: db.prepare(`
+      INSERT INTO indirect_costs (month, year, cost_category, description, amount, created_by) 
+      VALUES (?, ?, ?, ?, ?, ?) 
+      RETURNING *
+    `)
+  };
+
+  console.log('✅ Database queries prepared successfully');
 };
